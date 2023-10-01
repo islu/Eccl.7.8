@@ -32,9 +32,11 @@ func NewApp() *App {
 		log.Fatal(err)
 	}
 
+	sw, sh := ebiten.ScreenSizeInFullscreen()
+
 	return &App{
-		ScreenWidth:  320,
-		ScreenHeight: 240,
+		ScreenWidth:  sw / 2,
+		ScreenHeight: sh / 2,
 		text:         "Enter a prompt here:\n",
 		counter:      0,
 		bard:         ebiten.NewImageFromImage(img),

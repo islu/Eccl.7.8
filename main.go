@@ -11,11 +11,17 @@ func main() {
 
 	app := itn.NewApp()
 
-	ebiten.SetWindowSize(app.ScreenWidth*2, app.ScreenHeight*2)
 	ebiten.SetWindowTitle("Eccl.7.8")
-	// ebiten.SetWindowDecorated(false)
+	ebiten.SetWindowSize(app.ScreenWidth*2, app.ScreenHeight*2)
+	// ebiten.SetWindowPosition(0, 0)
+	// ebiten.SetFullscreen(true)
 	ebiten.SetWindowFloating(true)
-	if err := ebiten.RunGame(app); err != nil {
+	// ebiten.SetWindowDecorated(false)
+
+	err := ebiten.RunGameWithOptions(app, &ebiten.RunGameOptions{
+		ScreenTransparent: true,
+	})
+	if err != nil {
 		log.Fatal(err)
 	}
 }
