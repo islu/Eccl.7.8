@@ -3,6 +3,7 @@ package internal
 import (
 	"bytes"
 	"log"
+	"os"
 	"strings"
 
 	_ "embed"
@@ -21,13 +22,21 @@ type App struct {
 	ScreenWidth  int
 	ScreenHeight int
 	runes        []rune
-	text         string
+	promptHint   string
+	prompt       string
+	content      string
 	counter      int
 	bard         *ebiten.Image
+	bot          *Chatbot
 }
 
 func NewApp() *App {
 	img, _, err := image.Decode(bytes.NewReader(bard))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bot, err := NewChatbot(os.Getenv("BARD_API_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,9 +46,9 @@ func NewApp() *App {
 	return &App{
 		ScreenWidth:  sw / 2,
 		ScreenHeight: sh / 2,
-		text:         "Enter a prompt here:\n",
-		counter:      0,
+		promptHint:   "Enter a prompt here:",
 		bard:         ebiten.NewImageFromImage(img),
+		bot:          bot,
 	}
 }
 
@@ -48,23 +57,29 @@ func (g *App) Update() error {
 	// Note that AppendInputChars result changes every frame, so you need to call this
 	// every frame.
 	g.runes = ebiten.AppendInputChars(g.runes[:0])
-	g.text += string(g.runes)
+	g.prompt += string(g.runes)
 
 	// Adjust the string to be at most 10 lines.
-	ss := strings.Split(g.text, "\n")
+	ss := strings.Split(g.prompt, "\n")
 	if len(ss) > 10 {
-		g.text = strings.Join(ss[len(ss)-10:], "\n")
+		g.prompt = strings.Join(ss[len(ss)-10:], "\n")
 	}
 
 	// If the enter key is pressed, add a line break.
 	if repeatingKeyPressed(ebiten.KeyEnter) || repeatingKeyPressed(ebiten.KeyNumpadEnter) {
-		g.text += "\n"
+		resp, err := g.bot.Ask(g.prompt)
+		if err != nil {
+			log.Fatal(err)
+		}
+		g.content = resp.Content
+
+		g.prompt = ""
 	}
 
 	// If the backspace key is pressed, remove one character.
 	if repeatingKeyPressed(ebiten.KeyBackspace) {
-		if len(g.text) >= 1 {
-			g.text = g.text[:len(g.text)-1]
+		if len(g.prompt) >= 1 {
+			g.prompt = g.prompt[:len(g.prompt)-1]
 		}
 	}
 
@@ -73,12 +88,18 @@ func (g *App) Update() error {
 }
 
 func (g *App) Draw(screen *ebiten.Image) {
+
+	ebitenutil.DebugPrint(screen, g.promptHint)
+
 	// Blink the cursor.
-	t := g.text
+	t := g.prompt
 	if g.counter%60 < 30 {
 		t += "_"
 	}
-	ebitenutil.DebugPrint(screen, t)
+	ebitenutil.DebugPrintAt(screen, t, 0, 20)
+
+	// Print content
+	ebitenutil.DebugPrintAt(screen, g.content, 200, 0)
 
 	// Draw image
 	op := &ebiten.DrawImageOptions{}
