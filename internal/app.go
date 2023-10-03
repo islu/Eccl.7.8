@@ -8,15 +8,23 @@ import (
 
 	_ "embed"
 	"image"
+	"image/color"
 	_ "image/png"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
-//go:embed bard.png
-var bard []byte
+var (
+	//go:embed bard.png
+	bard []byte
+	//go:embed Cubic_11_1.013_R.ttf
+	cubicFont []byte
+)
 
 type App struct {
 	ScreenWidth  int
@@ -28,10 +36,21 @@ type App struct {
 	counter      int
 	bard         *ebiten.Image
 	bot          *Chatbot
+	font         font.Face
 }
 
 func NewApp() *App {
 	img, _, err := image.Decode(bytes.NewReader(bard))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tt, err := opentype.Parse(cubicFont)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	font, err := opentype.NewFace(tt, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,6 +68,7 @@ func NewApp() *App {
 		promptHint:   "Enter a prompt here:",
 		bard:         ebiten.NewImageFromImage(img),
 		bot:          bot,
+		font:         font,
 	}
 }
 
@@ -106,6 +126,8 @@ func (g *App) Draw(screen *ebiten.Image) {
 	op.GeoM.Scale(0.05, 0.05)
 	op.GeoM.Translate(0, 64)
 	screen.DrawImage(g.bard, op)
+
+	text.Draw(screen, "hello 123 中文測試", g.font, 0, 30, color.White)
 }
 
 func (g *App) Layout(outsideWidth, outsideHeight int) (int, int) {
