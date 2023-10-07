@@ -10,7 +10,6 @@ import (
 func main() {
 
 	app := itn.NewApp()
-
 	ebiten.SetWindowTitle("Eccl.7.8")
 	ebiten.SetWindowSize(app.ScreenWidth*2, app.ScreenHeight*2)
 	// ebiten.SetWindowPosition(0, 0)
@@ -19,7 +18,7 @@ func main() {
 	// ebiten.SetWindowDecorated(false)
 
 	err := ebiten.RunGameWithOptions(app, &ebiten.RunGameOptions{
-		ScreenTransparent: true,
+		// ScreenTransparent: true,
 	})
 	if err != nil {
 		log.Fatal(err)

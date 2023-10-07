@@ -37,6 +37,7 @@ type App struct {
 	bard         *ebiten.Image
 	bot          *Chatbot
 	font         font.Face
+	snail        *Snail
 }
 
 func NewApp() *App {
@@ -63,12 +64,13 @@ func NewApp() *App {
 	sw, sh := ebiten.ScreenSizeInFullscreen()
 
 	return &App{
-		ScreenWidth:  sw / 2,
-		ScreenHeight: sh / 2,
+		ScreenWidth:  sw / 4,
+		ScreenHeight: sh / 4,
 		promptHint:   "Enter a prompt here:",
 		bard:         ebiten.NewImageFromImage(img),
 		bot:          bot,
 		font:         font,
+		snail:        NewSnail(),
 	}
 }
 
@@ -87,13 +89,13 @@ func (g *App) Update() error {
 
 	// If the enter key is pressed, add a line break.
 	if repeatingKeyPressed(ebiten.KeyEnter) || repeatingKeyPressed(ebiten.KeyNumpadEnter) {
-		resp, err := g.bot.Ask(g.prompt)
-		if err != nil {
-			log.Fatal(err)
-		}
-		g.content = resp.Content
+		// resp, err := g.bot.Ask(g.prompt)
+		// if err != nil {
+		// 	log.Fatal(err)
+		// }
+		// g.content = resp.Content
 
-		g.prompt = ""
+		// g.prompt = ""
 	}
 
 	// If the backspace key is pressed, remove one character.
@@ -121,13 +123,14 @@ func (g *App) Draw(screen *ebiten.Image) {
 	// Print content
 	ebitenutil.DebugPrintAt(screen, g.content, 200, 0)
 
-	// Draw image
 	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Scale(0.05, 0.05)
 	op.GeoM.Translate(0, 64)
 	screen.DrawImage(g.bard, op)
 
 	text.Draw(screen, "hello 123 中文測試", g.font, 0, 30, color.White)
+
+	g.snail.Draw(screen, g.counter)
 }
 
 func (g *App) Layout(outsideWidth, outsideHeight int) (int, int) {
