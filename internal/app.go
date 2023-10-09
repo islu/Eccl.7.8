@@ -64,8 +64,8 @@ func NewApp() *App {
 	sw, sh := ebiten.ScreenSizeInFullscreen()
 
 	return &App{
-		ScreenWidth:  sw / 4,
-		ScreenHeight: sh / 4,
+		ScreenWidth:  sw / 2,
+		ScreenHeight: sh / 2,
 		promptHint:   "Enter a prompt here:",
 		bard:         ebiten.NewImageFromImage(img),
 		bot:          bot,
@@ -87,15 +87,25 @@ func (g *App) Update() error {
 		g.prompt = strings.Join(ss[len(ss)-10:], "\n")
 	}
 
-	// If the enter key is pressed, add a line break.
-	if repeatingKeyPressed(ebiten.KeyEnter) || repeatingKeyPressed(ebiten.KeyNumpadEnter) {
-		// resp, err := g.bot.Ask(g.prompt)
-		// if err != nil {
-		// 	log.Fatal(err)
-		// }
-		// g.content = resp.Content
+	if inpututil.IsKeyJustPressed(ebiten.KeyControl) {
 
-		// g.prompt = ""
+		go func(prompt string) {
+			resp, err := g.bot.Ask(prompt)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			c := strings.Split(resp.Content, "\n")
+
+			for i := 0; i < len(c); i++ {
+				c[i] = addNewlines(c[i])
+			}
+
+			g.content = strings.Join(c, "\n")
+			g.prompt = ""
+		}(g.prompt)
+
+		g.prompt = "等待中..."
 	}
 
 	// If the backspace key is pressed, remove one character.
@@ -118,17 +128,17 @@ func (g *App) Draw(screen *ebiten.Image) {
 	if g.counter%60 < 30 {
 		t += "_"
 	}
-	ebitenutil.DebugPrintAt(screen, t, 0, 20)
+	text.Draw(screen, t, g.font, 0, 25, color.White)
 
 	// Print content
-	ebitenutil.DebugPrintAt(screen, g.content, 200, 0)
+	text.Draw(screen, g.content, g.font, 200, 25, color.White)
 
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Scale(0.05, 0.05)
-	op.GeoM.Translate(0, 64)
-	screen.DrawImage(g.bard, op)
+	// op := &ebiten.DrawImageOptions{}
+	// op.GeoM.Scale(0.05, 0.05)
+	// op.GeoM.Translate(0, 64)
+	// screen.DrawImage(g.bard, op)
 
-	text.Draw(screen, "hello 123 中文測試", g.font, 0, 30, color.White)
+	// text.Draw(screen, "hello 123 中文測試", g.font, 0, 30, color.White)
 
 	g.snail.Draw(screen, g.counter)
 }
@@ -151,4 +161,17 @@ func repeatingKeyPressed(key ebiten.Key) bool {
 		return true
 	}
 	return false
+}
+
+func addNewlines(s string) string {
+	b := strings.Builder{}
+	count := 0
+	for _, ss := range s {
+		count++
+		if count%30 == 0 {
+			b.WriteString("\n")
+		}
+		b.WriteRune(ss)
+	}
+	return b.String()
 }
