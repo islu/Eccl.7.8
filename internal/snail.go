@@ -55,8 +55,12 @@ func NewSnail() *Snail {
 		State: "walk",
 		Anim:  []Anim{walk},
 		PosX:  50,
-		PosY:  50,
+		PosY:  400,
 	}
+}
+
+func (s *Snail) IsOnClick(mouseX, mouseY int) bool {
+	return s.PosX <= mouseX && mouseX <= s.PosX+40 && s.PosY <= mouseY && mouseY <= s.PosY+40
 }
 
 func (s *Snail) Draw(screen *ebiten.Image, count int) {

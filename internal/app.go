@@ -38,6 +38,7 @@ type App struct {
 	bot          *Chatbot
 	font         font.Face
 	snail        *Snail
+	canPrompt    bool
 }
 
 func NewApp() *App {
@@ -71,47 +72,59 @@ func NewApp() *App {
 		bot:          bot,
 		font:         font,
 		snail:        NewSnail(),
+		canPrompt:    false,
 	}
 }
 
 func (g *App) Update() error {
-	// Add runes that are input by the user by AppendInputChars.
-	// Note that AppendInputChars result changes every frame, so you need to call this
-	// every frame.
-	g.runes = ebiten.AppendInputChars(g.runes[:0])
-	g.prompt += string(g.runes)
 
-	// Adjust the string to be at most 10 lines.
-	ss := strings.Split(g.prompt, "\n")
-	if len(ss) > 10 {
-		g.prompt = strings.Join(ss[len(ss)-10:], "\n")
+	mx, my := ebiten.CursorPosition()
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
+		if g.snail.IsOnClick(mx, my) {
+			g.canPrompt = !g.canPrompt
+		}
 	}
 
-	if inpututil.IsKeyJustPressed(ebiten.KeyControl) {
+	if g.canPrompt {
+		// Add runes that are input by the user by AppendInputChars.
+		// Note that AppendInputChars result changes every frame, so you need to call this
+		// every frame.
+		g.runes = ebiten.AppendInputChars(g.runes[:0])
+		g.prompt += string(g.runes)
 
-		go func(prompt string) {
-			resp, err := g.bot.Ask(prompt)
-			if err != nil {
-				log.Fatal(err)
+		// Adjust the string to be at most 10 lines.
+		ss := strings.Split(g.prompt, "\n")
+		if len(ss) > 10 {
+			g.prompt = strings.Join(ss[len(ss)-10:], "\n")
+		}
+
+		if inpututil.IsKeyJustPressed(ebiten.KeyControl) {
+
+			go func(prompt string) {
+				resp, err := g.bot.Ask(prompt)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				c := strings.Split(resp.Content, "\n")
+
+				for i := 0; i < len(c); i++ {
+					c[i] = addNewlines(c[i])
+				}
+
+				g.content = strings.Join(c, "\n")
+				g.prompt = ""
+			}(g.prompt)
+
+			g.prompt = "等待中..."
+		}
+
+		// If the backspace key is pressed, remove one character.
+		if repeatingKeyPressed(ebiten.KeyBackspace) {
+			if len(g.prompt) >= 1 {
+				g.prompt = g.prompt[:len(g.prompt)-1]
 			}
-
-			c := strings.Split(resp.Content, "\n")
-
-			for i := 0; i < len(c); i++ {
-				c[i] = addNewlines(c[i])
-			}
-
-			g.content = strings.Join(c, "\n")
-			g.prompt = ""
-		}(g.prompt)
-
-		g.prompt = "等待中..."
-	}
-
-	// If the backspace key is pressed, remove one character.
-	if repeatingKeyPressed(ebiten.KeyBackspace) {
-		if len(g.prompt) >= 1 {
-			g.prompt = g.prompt[:len(g.prompt)-1]
 		}
 	}
 
@@ -121,17 +134,19 @@ func (g *App) Update() error {
 
 func (g *App) Draw(screen *ebiten.Image) {
 
-	ebitenutil.DebugPrint(screen, g.promptHint)
+	if g.canPrompt {
+		ebitenutil.DebugPrintAt(screen, g.promptHint, 0, 300)
 
-	// Blink the cursor.
-	t := g.prompt
-	if g.counter%60 < 30 {
-		t += "_"
+		// Blink the cursor.
+		t := g.prompt
+		if g.counter%60 < 30 {
+			t += "_"
+		}
+		text.Draw(screen, t, g.font, 0, 325, color.White)
+
+		// Print content
+		text.Draw(screen, g.content, g.font, 200, 25, color.White)
 	}
-	text.Draw(screen, t, g.font, 0, 25, color.White)
-
-	// Print content
-	text.Draw(screen, g.content, g.font, 200, 25, color.White)
 
 	// op := &ebiten.DrawImageOptions{}
 	// op.GeoM.Scale(0.05, 0.05)
@@ -141,6 +156,10 @@ func (g *App) Draw(screen *ebiten.Image) {
 	// text.Draw(screen, "hello 123 中文測試", g.font, 0, 30, color.White)
 
 	g.snail.Draw(screen, g.counter)
+
+	// mx, my := ebiten.CursorPosition()
+	// ebitenutil.DebugPrintAt(screen, fmt.Sprintf("mx: %d, my: %d", mx, my), 0, 25)
+	// ebitenutil.DebugPrintAt(screen, fmt.Sprintf("hover: %v", g.snail.IsOnClick(mx, my)), 0, 50)
 }
 
 func (g *App) Layout(outsideWidth, outsideHeight int) (int, int) {
