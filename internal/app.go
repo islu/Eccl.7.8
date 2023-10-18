@@ -15,13 +15,14 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/islu/bard-sdk-go/bard"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
 
 var (
 	//go:embed bard.png
-	bard []byte
+	bardImage []byte
 	//go:embed Cubic_11_1.013_R.ttf
 	cubicFont []byte
 )
@@ -35,14 +36,14 @@ type App struct {
 	content      string
 	counter      int
 	bard         *ebiten.Image
-	bot          *Chatbot
+	bot          *bard.Chatbot
 	font         font.Face
 	snail        *Snail
 	canPrompt    bool
 }
 
 func NewApp() *App {
-	img, _, err := image.Decode(bytes.NewReader(bard))
+	img, _, err := image.Decode(bytes.NewReader(bardImage))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +58,7 @@ func NewApp() *App {
 		log.Fatal(err)
 	}
 
-	bot, err := NewChatbot(os.Getenv("BARD_API_KEY"))
+	bot, err := bard.NewChatbot(os.Getenv("BARD_API_KEY"))
 	if err != nil {
 		log.Fatal(err)
 	}

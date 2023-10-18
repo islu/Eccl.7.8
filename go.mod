@@ -5,6 +5,7 @@ go 1.21.1
 require (
 	github.com/ebitengine/purego v0.5.0 // indirect
 	github.com/hajimehoshi/ebiten/v2 v2.6.0 // indirect
+	github.com/islu/bard-sdk-go v0.0.0-20231002153042-5c6a67e85fca // indirect
 	github.com/jezek/xgb v1.1.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
 	golang.org/x/exp/shiny v0.0.0-20230817173708-d852ddb80c63 // indirect
